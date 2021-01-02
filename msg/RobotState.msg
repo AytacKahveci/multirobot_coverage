@@ -1,0 +1,9 @@
+Header header
+uint64 robot_id
+uint8 IDLE=0
+uint8 CPP=1
+uint8 WORKING=2
+uint8 STOP=3
+uint8 working_state
+geometry_msgs/PoseStamped pose
+Cell[] traversed_cells

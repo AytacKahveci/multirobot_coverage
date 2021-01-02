@@ -1,0 +1,9 @@
+<launch>
+<node name="robot_sim" type="robot_sim.py" pkg="multirobot_coverage" output="screen">
+  <param name="robot_name" type="str" value="robot1"/>
+  <param name="robot_id" type="int" value="1"/>
+  <param name="x_pos" type="double" value="42"/>
+  <param name="y_pos" type="double" value="24"/>
+</node>
+
+</launch>

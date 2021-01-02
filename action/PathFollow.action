@@ -1,0 +1,8 @@
+# Goal
+nav_msgs/Path path
+---
+# Result
+bool success
+---
+# Feedback
+nav_msgs/Path traversed

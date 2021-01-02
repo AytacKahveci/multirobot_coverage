@@ -1,0 +1,15 @@
+<launch>
+
+<node name="fsm" type="fsm.py" pkg="multirobot_coverage" output="screen">
+  <param name="robot_name" type="str" value="robot1"/>
+  <param name="robot_id" type="int" value="1"/>
+  <param name="robot_size" type="double" value="0.5"/>
+</node>
+
+<node name="fsm2" type="fsm.py" pkg="multirobot_coverage" output="screen">
+  <param name="robot_name" type="str" value="robot2"/>
+  <param name="robot_id" type="int" value="2"/>
+  <param name="robot_size" type="double" value="0.5"/>
+</node>
+
+</launch>

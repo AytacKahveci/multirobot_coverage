@@ -1,0 +1,9 @@
+<launch>
+    <arg name="map_path" default="$(find multirobot_coverage)/maps"/>
+    <arg name="map_file" default="test_map.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)/$(arg map_file)">
+        <param name="frame_id" value="map"/>
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multirobot_coverage)/rviz/rviz.rviz" />
+</launch>
