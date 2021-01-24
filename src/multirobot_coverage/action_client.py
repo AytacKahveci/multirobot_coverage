@@ -15,7 +15,10 @@ if __name__ == "__main__":
   rospy.loginfo("Waiting for action server to come up...")
   action_client.wait_for_server()
   rospy.loginfo("Action server is active")
-  path_arr = [(48.3, 24), (55.2, 23.7), (60.0, 18.0)]
+  path_arr = [(40, 28.1), (40, 27.1), (40, 26.1), (40, 25.1), (40, 24.3), (40, 23.1), (40, 22.1), (40, 21.1), (40, 20.1), (40, 17.3), (38.1, 16.4)]
+  path_arr2 = [(38, 28.1), (38, 27.1), (38, 26.1), (38, 25.1), (38, 24.3), (38, 23.1), (38, 22.1), (38, 21.1), (38, 20.1), (38, 17.3), (38.1, 16.4)]
+
+  path_arr = path_arr + path_arr2[::-1]
   path = Path()
   path.header.frame_id = "map"
   path.header.stamp = rospy.Time.now()

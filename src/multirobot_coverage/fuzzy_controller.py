@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 import os
 import sys
 import math
+import angles
 import threading
 from copy import deepcopy
 import numpy as np
@@ -11,6 +13,7 @@ import matplotlib.pyplot as plt
 import rospy
 import actionlib
 import tf2_ros
+import tf.transformations as tft
 
 from nav_msgs.msg import Path, Odometry
 from visualization_msgs.msg import Marker
@@ -34,13 +37,13 @@ class Robot:
     self.robot_marker = Marker()
     self.robot_marker.header.frame_id = "map"
     self.robot_marker.id = 1
-    self.robot_marker.type = Marker.CUBE
+    self.robot_marker.type = Marker.ARROW
     self.robot_marker.action = Marker.ADD
     self.robot_marker.color.r = 1.0
     self.robot_marker.color.a = 1.0
-    self.robot_marker.scale.x = 0.5
-    self.robot_marker.scale.y = 0.5
-    self.robot_marker.scale.z = 0.5
+    self.robot_marker.scale.x = 0.8
+    self.robot_marker.scale.y = 0.4
+    self.robot_marker.scale.z = 0.2
 
   def odom_cb(self, msg):
     pass
@@ -104,14 +107,13 @@ class Robot:
       rospy.logwarn_throttle(4, "Rob thread")
       self.map_pose, self.odom_pose = self.get_pose()
 
-      if self.map_pose and self.odom_pose:
+      if self.map_pose:
         first_msg = True
 
       if first_msg:
         self.pose_pub.publish(self.map_pose)
         self.robot_marker.header.stamp = rospy.Time.now()
         self.robot_marker.pose = deepcopy(self.map_pose.pose)
-        self.robot_marker.pose.orientation.w = 1
         self.marker_pub.publish(self.robot_marker) 
       rate.sleep()
 
@@ -121,6 +123,8 @@ class FuzzyLocalPlanner:
   def __init__(self, robot):
     self.robot = robot
     self.action_server = actionlib.SimpleActionServer("/" + robot.name + "/path_follower", PathFollowAction, execute_cb=self.execute_cb, auto_start=False)
+    self.desired_pub = rospy.Publisher("/" + robot.name + "/desired", Path, queue_size=1)
+    self.actual_pub = rospy.Publisher("/" + robot.name + "/actual", Path, queue_size=1)
 
     self.action_server.start()
     print("Server is started")
@@ -132,8 +136,9 @@ class FuzzyLocalPlanner:
     self.local_plan = Path()
 
     self.look_ahead_distance = 1.0
-    self.goal_dist_threshold = 0.1
-    self.wheel_seperation = 0.3
+    self.goal_dist_threshold = 0.3
+    self.wheel_radius = 0.15
+    self.wheel_seperation = 0.39
 
     # Local planner path index
     self.robot_path_ind = 0
@@ -166,7 +171,7 @@ class FuzzyLocalPlanner:
     wl['high'] = fuzz.trimf(wl.universe, [4.0, 6.0, 7.0])
 
     wr = ctrl.Consequent(np.arange(0.0, 7.0, 0.1), 'wr')
-    wr['zero'] = fuzz.trimf(wl.universe, [0, 0, 0])
+    wr['zero'] = fuzz.trimf(wr.universe, [0, 0, 0])
     wr['small'] = fuzz.trimf(wr.universe, [0, 1.5, 3.0])
     wr['medium'] = fuzz.trimf(wr.universe, [2.5, 3.5, 5.0])
     wr['high'] = fuzz.trimf(wr.universe, [4.0, 6.0, 7.0])
@@ -316,12 +321,12 @@ class FuzzyLocalPlanner:
       wl (float): Left wheel angular vel
       wr (float): Right wheel angular vel
     """
-    v = (wl + wr) / 2.0
-    w = (wr - wl) / self.wheel_seperation
-    if w > 0.3:
+    v = (wl + wr) / 2.0 * self.wheel_radius
+    w = (wr - wl) / self.wheel_seperation * self.wheel_radius
+    """ if w > 0.3:
       w = 0.3
     elif w < -0.3:
-      w = -0.3
+      w = -0.3 """
     if v > 1.0:
       v = 1
     elif v < -1.0:
@@ -366,7 +371,13 @@ class FuzzyLocalPlanner:
 
     goal = self.global_plan.poses[self.robot_path_ind].pose
     dist = self.calc_distance(map_pose.pose, goal)
-    angle = self.calc_angle(map_pose.pose, goal)
+
+    yaw = tft.euler_from_quaternion([map_pose.pose.orientation.x, map_pose.pose.orientation.y, map_pose.pose.orientation.z, map_pose.pose.orientation.w])[2]
+
+    yaw = yaw
+    a = self.calc_angle(map_pose.pose, goal)
+    print("Angle: %f - Yaw: %f"%(a, yaw))
+    angle = angles.shortest_angular_distance(yaw, a)
 
     if(dist < 0.3):
       self.robot_path_ind += 1
@@ -447,6 +458,8 @@ class FuzzyLocalPlanner:
     print("Action server")
     loop_rate = rospy.Rate(10)
     
+    actual_path = Path()
+    actual_path.header.frame_id = "map"
     self.set_plan(goal.path)
     while not rospy.is_shutdown():
       rospy.logwarn_throttle(2.0,"ExecCb")
@@ -476,6 +489,10 @@ class FuzzyLocalPlanner:
       if res:
         self.robot.command(cmd_vel)
 
+      actual_path.header.stamp = rospy.Time.now()
+      actual_path.poses.append(map_pose)
+      self.desired_pub.publish(goal.path)
+      self.actual_pub.publish(actual_path)
       loop_rate.sleep()
 
 
@@ -484,7 +501,8 @@ class FuzzyLocalPlanner:
 if __name__ == "__main__":
   rospy.init_node("fuzzy_controller")
 
-  robot = Robot("robot1")
+  robot_name = rospy.get_param("~robot_name", "robot1")
+  robot = Robot(robot_name)
   t = threading.Thread(target=robot.run)
   t.start()
   local_planner = FuzzyLocalPlanner(robot=robot)

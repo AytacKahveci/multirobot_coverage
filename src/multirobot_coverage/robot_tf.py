@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import math
 import rospy
 import tf2_ros
@@ -6,10 +7,6 @@ from geometry_msgs.msg import Pose, PoseStamped, Twist, TransformStamped
 from nav_msgs.msg import Odometry
 
 
-_wheel_seperation = 0.3
-_x = 42.0
-_y = 24.0
-_heading = 0.0
 
 
 class RobotTf:
@@ -88,10 +85,16 @@ class RobotTf:
 
 if __name__ == "__main__":
   rospy.init_node("robot_tf")
+  global _wheel_seperation, _x, _y, _heading
   
   robot_name = rospy.get_param("~robot_name", "robot1")
   robot_id = rospy.get_param("~robot_id", 1)
   robot_size = rospy.get_param("~robot_size", 0.5)
+  
+  _wheel_seperation = rospy.get_param("~wheel_seperation", 0.39)
+  _x = rospy.get_param("~x_pos", 42)
+  _y = rospy.get_param("~y_pos", 24)
+  _heading = 0.0
   
   rob_tf = RobotTf(robot_name)
   rob_tf.run()

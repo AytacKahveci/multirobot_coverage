@@ -1,0 +1,19 @@
+<launch>
+  
+  <!-- BEGIN ROBOT 1-->
+  <group ns="robot1">
+    <!-- <param name="tf_prefix" value="robot1" /> -->
+    <include file="$(find multirobot_coverage)/launch/robot.launch" >
+      <arg name="initial_pose_x" value="10" />
+      <arg name="initial_pose_y" value="12.7" />
+      <arg name="initial_pose_z" value="0" />
+      <arg name="initial_pose_yaw" value="3.1415926" />
+      <arg name="robot_name"  value="robot1" />
+    </include>
+  </group>
+
+  <node name="fuzzy_controller_robot1" type="fuzzy_controller.py" pkg="multirobot_coverage" output="screen">
+    <remap from="/robot1/odom" to="/robot1/p3dx_velocity_controller/odom"/>
+    <remap from="/robot1/cmd_vel" to="/robot1/p3dx_velocity_controller/cmd_vel"/>
+  </node>
+</launch>

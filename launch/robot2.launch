@@ -1,0 +1,15 @@
+<launch>
+  
+<!-- BEGIN ROBOT 2-->
+<group ns="robot2">
+  <!-- <param name="tf_prefix" value="robot1" /> -->
+  <include file="$(find multirobot_coverage)/launch/robot.launch" >
+    <arg name="initial_pose_x" value="21.4" />
+    <arg name="initial_pose_y" value="13" />
+    <arg name="initial_pose_z" value="0" />
+    <arg name="initial_pose_yaw" value="3.1415926" />
+    <arg name="robot_name"  value="robot2" />
+  </include>
+</group>
+
+</launch>
